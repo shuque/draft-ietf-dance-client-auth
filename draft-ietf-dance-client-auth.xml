@@ -30,7 +30,7 @@
 
 <rfc xmlns:xi="http://www.w3.org/2001/XInclude"
         category="std" consensus="true"
-        docName="draft-ietf-dance-client-auth-08"
+        docName="draft-ietf-dance-client-auth-09"
         ipr="trust200902" updates="6698,7671" obsoletes=""
         submissionType="IETF" xml:lang="en"
         tocInclude="true" tocDepth="4"
@@ -41,7 +41,7 @@
   <front>
 
     <title abbrev="TLSA client authentication">TLS Client Authentication via DANE TLSA records</title>
-    <seriesInfo name="Internet-Draft" value="draft-ietf-dance-client-auth-08"/>
+    <seriesInfo name="Internet-Draft" value="draft-ietf-dance-client-auth-09"/>
     <author fullname="Shumon Huque" initials="S." surname="Huque">
       <organization>Salesforce</organization>
       <address>
@@ -57,7 +57,7 @@
       </address>
     </author>
 
-    <date day="13" month="06" year="2025"/>
+    <date day="19" month="09" year="2025"/>
     <!-- Meta-data Declarations -->
 
     <area>General</area>
@@ -323,7 +323,7 @@ sensor7._device.example.com. IN TLSA (
       <name>Changes to Client and Server behavior</name>
       <t>
 	A TLS Client conforming to this specification MUST
-	have a signed DNS TLSA record published corresponding to
+	have a <xref target="RFC9364">DNSSEC</xref> signed TLSA record published corresponding to
 	its DNS name and X.509 certificate or public key. The client
 	presents this certificate or public key in the TLS handshake
 	with the server. The client should not offer ciphersuites
@@ -360,9 +360,14 @@ sensor7._device.example.com. IN TLSA (
 	  client certificate are used.</li>
         <li>Look up the TLSA record set in the DNS. The response MUST be
 	  cryptographically validated using DNSSEC. The server could
-	  perform the DNSSEC validation itself. It could also be
-	  configured to trust responses obtained via a validating
-	  resolver to which it has a secure connection.</li>
+	  perform DNSSEC validation itself, authenticating the full
+          chain back to a configured trust anchor (normally the DNS root).
+          Alternatively, it could also be configured to trust responses
+          obtained via a validating resolver to which it has a secure
+          connection, by requiring the Authenticated Data (AD) bit to
+          be set in the responses. If DNSSEC validation fails, the server
+          MUST treat the client as unauthenticated.
+        </li>
         <li>Extract the RDATA of the TLSA records and match them to the
 	  presented client certificate according to the rules specified
 	  in the DANE TLS protocol <xref target="RFC6698" format="default"/>
@@ -442,8 +447,9 @@ sensor7._device.example.com. IN TLSA (
         content of the client names. Applications employing this protocol
         should carefully assess those potential issues.
         There are no other security considerations for this document beyond
-        those described in RFC 6698 and RFC 7671 and in the specifications
-        for TLS and DTLS [RFC8446], [RFC5246], [RFC6347].
+        those described in <xref target="RFC6698" /> and <xref target="RFC7671" />
+        and in the specifications for TLS and DTLS <xref target="RFC8446" />,
+        <xref target="RFC5246" />, <xref target="RFC6347" />.
       </t>
     </section>
 
@@ -465,6 +471,7 @@ sensor7._device.example.com. IN TLSA (
         <xi:include href="https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.7671.xml"/>
         <xi:include href="https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.8174.xml"/>
         <xi:include href="https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.8446.xml"/>
+        <xi:include href="https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.9364.xml"/>
         <reference anchor="TLSCLIENTID" target="https://datatracker.ietf.org/doc/html/draft-ietf-dance-tls-clientid">
           <front>
             <title>TLS Extension for DANE Client Identity</title>
