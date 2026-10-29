@@ -30,7 +30,7 @@
 
 <rfc xmlns:xi="http://www.w3.org/2001/XInclude"
         category="std" consensus="true"
-        docName="draft-ietf-dance-client-auth-15"
+        docName="draft-ietf-dance-client-auth-16"
         ipr="trust200902" obsoletes=""
         submissionType="IETF" xml:lang="en"
         tocInclude="true" tocDepth="4"
@@ -41,7 +41,7 @@
   <front>
 
     <title abbrev="TLSA client authentication">TLS Client Authentication via DANE TLSA records</title>
-    <seriesInfo name="Internet-Draft" value="draft-ietf-dance-client-auth-15"/>
+    <seriesInfo name="Internet-Draft" value="draft-ietf-dance-client-auth-16"/>
     <author fullname="Shumon Huque" initials="S." surname="Huque">
       <organization>Salesforce</organization>
       <address>
@@ -57,7 +57,7 @@
       </address>
     </author>
 
-    <date day="27" month="10" year="2026"/>
+    <date day="29" month="10" year="2026"/>
     <!-- Meta-data Declarations -->
 
     <area>General</area>
@@ -121,6 +121,15 @@
         handshake messages protects it from disclosure on the network path;
         however, see <xref target="Security" format="default"/> regarding
         its possible exposure through DNS queries.
+      </t>
+      <t>
+        This protocol is intended for deployments in which disclosure of
+        the client's name to DNS resolvers and authoritative servers is
+        acceptable, such as devices and services identified by machine
+        names. It is generally unsuitable where the client's identity must
+        be kept confidential, for example where client names identify
+        individual people, unless the mitigations described in
+        <xref target="Security" format="default"/> are applied.
       </t>
       <section anchor="reserved-words"><name>Requirements Language</name>
       <t>The key words &quot;MUST&quot;, &quot;MUST NOT&quot;, &quot;REQUIRED&quot;, &quot;SHALL&quot;, &quot;SHALL NOT&quot;,
@@ -466,9 +475,11 @@ opaque ClientName<0..2^8-1>;
       <section anchor="client_behavior" numbered="true" toc="default">
       <name>Client Behavior</name>
       <t>
-	A TLS client conforming to this specification MUST have a
-	<xref target="RFC9364">DNSSEC</xref> signed TLSA record published
-        corresponding to its DNS name and X.509 certificate or public key.
+        DANE client authentication requires that a
+        <xref target="RFC9364">DNSSEC</xref> signed TLSA record,
+        corresponding to the client's X.509 certificate or public key, be
+        published at the owner name the client conveys in its ClientName
+        (see <xref target="owner_format" format="default"/>).
       </t>
       <t>
         A client can only use this protocol with a server that supports it
@@ -486,13 +497,19 @@ opaque ClientName<0..2^8-1>;
       <section anchor="server_behavior" numbered="true" toc="default">
       <name>Server Behavior</name>
       <t>
+        A server that requires DANE client authentication MUST NOT
+        negotiate a protocol version below TLS 1.3 (or DTLS 1.3) for
+        connections where such authentication is mandatory (see
+        <xref target="intro" format="default"/>).
+      </t>
+      <t>
         A TLS Server implementing this specification performs the
 	following steps:
 
       </t>
       <ol spacing="normal">
         <li>Request a client certificate in the TLS handshake's
-	  "Certificate Request" message, that includes a DANE
+	  CertificateRequest message, that includes a DANE
           Client Identity extension with a zero-length ClientName.</li>
         <li>Receive the client's Certificate message, together with any
           DANE Client Identity extension it carries.</li>
@@ -554,10 +571,18 @@ opaque ClientName<0..2^8-1>;
 	connection with a handshake_failure TLS alert.
       </t>
       <t>
+        The client identity authenticated by this protocol is the name
+        carried in the ClientName field. The TLS implementation needs to
+        make this name available to the application. Other names in the
+        client's certificate are not authenticated by this protocol; in
+        particular, with the DANE-EE usage, names in the certificate are not
+        checked at all (see <xref target="RFC7671" section="5.1" sectionFormat="of"/>).
+      </t>
+      <t>
 	Servers may have their own allowlisting and authorization rules
 	for which certificates they accept. For example a TLS server may
 	be configured to only allow TLS sessions from clients with
-	certificate identities within a specific domain or set of domains.
+	client names within a specific domain or set of domains.
         If such rules are not met, the TLS server MUST either abort
         the connection with a handshake_failure TLS alert, or treat the
         client as unauthenticated, if TLS server policy allows.
@@ -716,13 +741,13 @@ opaque ClientName<0..2^8-1>;
         client credentials across distinct applications.
       </t>
       <t>
-        Because this mechanism cannot operate over TLS 1.2 or earlier
-        (see <xref target="intro" format="default"/>), a
-        server that requires DANE client authentication MUST NOT negotiate
-        a protocol version below TLS 1.3 (or DTLS 1.3) for connections
-        where such authentication is mandatory; otherwise the client would
-        be unable to convey its DANE identity and authentication could be
-        silently bypassed.
+        This mechanism cannot operate over TLS 1.2 or earlier (see
+        <xref target="intro" format="default"/>). A server that negotiated
+        an earlier version would not receive the client's DANE identity,
+        and authentication could be silently bypassed.
+        <xref target="server_behavior" format="default"/> therefore
+        requires TLS 1.3 or DTLS 1.3 where DANE client authentication is
+        mandatory.
       </t>
       <t>
         This specification uses a single, generic TLS alert
@@ -740,7 +765,7 @@ opaque ClientName<0..2^8-1>;
         IANA is requested to create the following entry in the "TLS ExtensionType Values" registry:
       </t>
       <t>
-        Extension Name "dane_clientid" with value TBD, "TLS 1.3" column values set to "CR, CT", "DTLS-Only" column set to "N", and "Recommended" column set to "N".
+        Extension Name "dane_clientid" with value TBD, "TLS 1.3" column values set to "CR, CT", "DTLS-Only" column set to "N", "Recommended" column set to "N", and "Comment" column set to "For TLS 1.3 or later".
       </t>
       <t>
         The 'N' designation in the "Recommended" column is because this
